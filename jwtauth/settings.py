@@ -115,7 +115,7 @@ USE_L10N = True
 
 USE_TZ = True
 
-# AUTH_USER_MODEL = "myauth.AppUser" # add
+AUTH_USER_MODEL = "myauth.AppUser" # add
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
