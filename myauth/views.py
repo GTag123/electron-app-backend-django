@@ -21,16 +21,16 @@ class CreateUserAPIView(APIView):
     # Allow any user (authenticated or not) to access this url
     permission_classes = (AllowAny,)
 
-    def create_data(self, obj, status=0):
+    def create_data(self, obj, errors=0):
         data = obj
-        data['errors'] = status
+        data['errors'] = errors
         return data
 
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(self.create_data(serializer.data), status=status.HTTP_201_CREATED) # ???????
+            return Response(self.create_data({'user': serializer.data}), status=status.HTTP_201_CREATED) # ???????
 
         return Response(self.create_data(serializer.errors, len(serializer.errors)), status=status.HTTP_400_BAD_REQUEST)
     
