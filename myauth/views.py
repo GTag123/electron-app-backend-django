@@ -27,7 +27,15 @@ class CreateUserAPIView(APIView):
         return data
 
     def post(self, request):
-        serializer = UserSerializer(data=request.data)
+        data = {  # getting form fields data
+            'username': request.data.get('login'),
+            'email': request.data.get('email'),
+            'password': request.data.get('password'),
+            'first_name': request.data.get('first_name', ''),
+            'last_name': request.data.get('last_name', ''),
+            'age': request.data.get('age')
+        }
+        serializer = UserSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(self.create_data({'user': serializer.data}), status=status.HTTP_201_CREATED) # ???????
@@ -41,8 +49,9 @@ class UserAuth(APIView):
     
     permission_classes = (AllowAny,)
     def post(self, request):
-        username = request.data['username']
-        password = request.data['password']
+        print(request.data)
+        username = request.data.get('login')
+        password = request.data.get('password')
 
         try:
             user = User.objects.get(username=username) # authenticate(email=email, password=password)
