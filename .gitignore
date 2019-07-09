@@ -1,5 +1,4 @@
 .vscode
 env
 db.sqlite3
-myauth/__pycache__/
-*.pyc
+__pycache__

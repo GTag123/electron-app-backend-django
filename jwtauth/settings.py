@@ -131,7 +131,7 @@ JWT_AUTH = {
     'JWT_ALLOW_REFRESH': True,
     'JWT_VERIFY': True,
     'JWT_VERIFY_EXPIRATION': True,
-    'JWT_EXPIRATION_DELTA': timedelta(days=14),
+    'JWT_EXPIRATION_DELTA': timedelta(days=21),
     'JWT_AUTH_HEADER_PREFIX': 'Bearer',
 }
 

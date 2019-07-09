@@ -12,14 +12,18 @@ from rest_framework_jwt.utils import jwt_payload_handler, jwt
 from django.conf import settings
 from django.contrib.auth.signals import user_logged_in
 
-
 User = get_user_model()
+
+def create_token(object_model):
+    payload = jwt_payload_handler(object_model)
+    return jwt.encode(payload, settings.SECRET_KEY)
 
 class CreateUserAPIView(APIView):
     def get(self, request):
         return HttpResponseForbidden()
     # Allow any user (authenticated or not) to access this url
     permission_classes = (AllowAny,)
+    serializer_class = UserSerializer
 
     def create_data(self, obj, errors=0):
         data = obj
@@ -35,7 +39,7 @@ class CreateUserAPIView(APIView):
             'last_name': request.data.get('last_name', ''),
             'age': request.data.get('age')
         }
-        serializer = UserSerializer(data=data)
+        serializer = self.serializer_class(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(self.create_data({'user': serializer.data}), status=status.HTTP_201_CREATED) # ???????
@@ -48,8 +52,9 @@ class UserAuth(APIView):
         return HttpResponseForbidden()
     
     permission_classes = (AllowAny,)
+    serializer_class = UserSerializer
+
     def post(self, request):
-        print(request.data)
         username = request.data.get('login')
         password = request.data.get('password')
 
@@ -60,24 +65,15 @@ class UserAuth(APIView):
                     res = {'login_status': 3, 'message': 'user banned'}
                     return Response(res, status=status.HTTP_403_FORBIDDEN)
                 
+                serializer = self.serializer_class(instance=user)
+
                 user_logged_in.send(sender=user.__class__,
                                     request=request, user=user)
+                token = create_token(user)
                 
-                payload = jwt_payload_handler(user)
-                token = jwt.encode(payload, settings.SECRET_KEY)
                 res = {'login_status': 1, 'message': 'success auth'}
                 res['token'] = token
-                res['user'] = {
-                    'user_id': user.id,
-                    'username': user.username,
-                    'email': user.email,
-                    'first_name': user.first_name,
-                    'last_name': user.last_name,
-                    'age': user.age,
-                    'is_active': user.is_active,
-                    'is_staff': user.is_staff,
-                    'data_joined': user.date_joined
-                }
+                res['user'] = serializer.data
                 return Response(res, status=status.HTTP_200_OK)
             else:
                 res = {'login_status': 2, 'message': 'wrong password'}
@@ -86,3 +82,26 @@ class UserAuth(APIView):
         except User.DoesNotExist:
             res = {'login_status': 4, 'message': 'user does not exist'}
             return Response(res, status=status.HTTP_400_BAD_REQUEST)
+
+class GetUserInfo(APIView):
+    def get(self, request):
+        return HttpResponseForbidden
+    
+    # default permission_classes
+    serializer_class = UserSerializer
+    def post(self, request):
+        print(request.user)
+        if request.data.get('online'):
+            user_logged_in.send(sender=request.user.__class__,
+                                    request=request, user=request.user)
+        serializer = self.serializer_class(instance=request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class RefreshToken(APIView):
+    def get(self, request):
+        return HttpResponseForbidden
+    
+    # default permission_classes
+    def post(self, request):
+        token = create_token(request.user)
+        return Response({'token': token}, status=status.HTTP_200_OK)
